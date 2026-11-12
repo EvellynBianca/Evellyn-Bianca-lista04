@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalha Postagem</title>
+    <style>
+        body {
+            font-family: "Times New Roman", Times, serif;
+            margin: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        label,
+        select {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        label {
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        select {
+            padding: 8px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        #lista-posts {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .post-item {
+            background-color: #eee;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .post-item:hover {
+            background-color: #ddd;
+        }
+
+        #detalhe-post {
+            margin-top: 20px;
+        }
+
+        #detalhe-post h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        #detalhe-post p {
+            margin-bottom: 15px;
+            font-size: 15px;
+        }
+
+        #detalhe-post h4 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        #comentarios p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Detalha Postagem</h1>
+
+    <label for="selectUsuario">Usuário:</label>
+    <select id="selectUsuario">
+        <option value="">Selecione um usuário</option>
+    </select>
+
+    <div id="lista-posts"></div>
+
+    <div id="detalhe-post"></div>
+
+    <script>
+        const selectUsuario = document.getElementById('selectUsuario');
+        const divListaPosts = document.getElementById('lista-posts');
+        const divDetalhePost = document.getElementById('detalhe-post');
+
+        async function carregarUsuarios() {
+            try {
+                const response = await fetch('https://jsonplaceholder.typicode.com/users');
+                const usuarios = await response.json();
+
+                usuarios.forEach(usuario => {
+                    const option = document.createElement('option');
+                    option.value = usuario.id;
+                    option.textContent = usuario.name;
+                    selectUsuario.appendChild(option);
+                });
+            } catch (erro) {
+                console.error('Erro ao carregar usuários:', erro);
+            }
+        }
+
+        selectUsuario.addEventListener('change', async function () {
+            const userId = selectUsuario.value;
+
+            divListaPosts.innerHTML = '';
+            divDetalhePost.innerHTML = '';
+
+            if (!userId) return;
+
+            try {
+                const response = await fetch(`https://jsonplaceholder.typicode.com/posts?userId=${userId}`);
+                const posts = await response.json();
+
+                posts.forEach(post => {
+                    const divPost = document.createElement('div');
+                    divPost.className = 'post-item';
+                    divPost.textContent = post.title;
+
+                    divPost.addEventListener('click', () => carregarDetalhesPost(post.id));
+
+                    divListaPosts.appendChild(divPost);
+                });
+            } catch (erro) {
+                console.error('Erro ao carregar posts:', erro);
+            }
+        });
+
+        async function carregarDetalhesPost(postId) {
+            try {
+                // Requisições paralelas para otimizar o carregamento
+                const [resPost, resComentarios] = await Promise.all([
+                    fetch(`https://jsonplaceholder.typicode.com/posts/${postId}`),
+                    fetch(`https://jsonplaceholder.typicode.com/posts/${postId}/comments`)
+                ]);
+
+                const post = await resPost.json();
+                const comentarios = await resComentarios.json();
+
+                let htmlComentarios = '';
+                comentarios.forEach(comentario => {
+                    htmlComentarios += `<p><strong>${comentario.email}:</strong> ${comentario.body}</p>`;
+                });
+
+                divDetalhePost.innerHTML = `
+          <h3>${post.title}</h3>
+          <p>${post.body}</p>
+          <h4>Comentários:</h4>
+          <div id="comentarios">
+            ${htmlComentarios}
+          </div>
+        `;
+            } catch (erro) {
+                console.error('Erro ao carregar detalhes da postagem:', erro);
+            }
+        }
+
+        // Inicializa carregando a lista de utilizadores
+        carregarUsuarios();
+    </script>
+
+</body>
+
+</html>

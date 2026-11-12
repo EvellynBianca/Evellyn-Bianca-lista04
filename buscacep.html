@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busca CEP</title>
+    <style>
+        body {
+            font-family: "Times New Roman", Times, serif;
+            margin: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        input,
+        button {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        #resultado p {
+            margin: 12px 0;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>buscaCEP</h1>
+
+    <input type="text" id="cep" placeholder="Digite o CEP (ex: 01001000)">
+    <button id="btnBuscar">Buscar Endereço</button>
+
+    <div id="resultado"></div>
+
+    <script>
+        const btnBuscar = document.getElementById('btnBuscar');
+        const inputCep = document.getElementById('cep');
+        const divResultado = document.getElementById('resultado');
+
+        btnBuscar.addEventListener('click', buscarEndereco);
+
+        async function buscarEndereco() {
+            const cepLimpo = inputCep.value.replace(/\D/g, '');
+
+            if (cepLimpo.length !== 8) {
+                exibirErro();
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+
+                if (!response.ok) {
+                    exibirErro();
+                    return;
+                }
+
+                const dados = await response.json();
+
+                if (dados.erro) {
+                    exibirErro();
+                    return;
+                }
+
+                divResultado.innerHTML = `
+          <p><strong>Logradouro:</strong> ${dados.logradouro}</p>
+          <p><strong>Bairro:</strong> ${dados.bairro}</p>
+          <p><strong>Cidade:</strong> ${dados.localidade}</p>
+          <p><strong>Estado:</strong> ${dados.uf}</p>
+        `;
+            } catch (erro) {
+                exibirErro();
+            }
+        }
+
+        function exibirErro() {
+            divResultado.innerHTML = `<p>Erro ao buscar endereço.</p>`;
+        }
+    </script>
+
+</body>
+
+</html>
